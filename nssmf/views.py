@@ -22,6 +22,7 @@ import zipfile
 import importlib
 
 from django.http import JsonResponse, Http404, HttpResponse
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import status, mixins
 from rest_framework.decorators import action
@@ -35,7 +36,21 @@ from nssmf.serializers import SliceTemplateSerializer, SliceTemplateRelationSeri
 from nssmf.models import SliceTemplate, GenericTemplate, ServiceMappingPluginModel, Content
 from nssmf.enums import OperationStatus, PluginOperationStatus
 from free5gmano import settings
+from basic.models import User
 
+def check_user(request):
+    name = request.user
+    uu_id, role, message = -1, "", ""
+    if name not in ["AnonymousUser", "", None]:
+        user_obj = User.objects.filter(username=name).first()
+        if user_obj:
+            uu_id = user_obj.id
+            role = user_obj.role
+        else:
+            message = "查無使用者"
+    else:
+        message = "請先登入"
+    return uu_id, role, message
 
 class CustomAuthToken(ObtainAuthToken):
 
@@ -88,6 +103,17 @@ class GenericTemplateView(MultipleSerializerViewSet):
             Query Generic Template information.
             The GET method queries the information of the Generic Template matching the filter.
         """
+        uu_id, role, message = check_user(request)
+        if message:
+            return JsonResponse({
+                    "status": 1,
+                    "message": message
+                    })
+        if role == "superuser":
+            self.queryset = GenericTemplate.objects.all()
+        else:
+            self.queryset = GenericTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
+        
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -221,6 +247,16 @@ class SliceTemplateView(MultipleSerializerViewSet):
             Query Slice Template information.
             The GET method queries the information of the Slice Template matching the filter.
         """
+        uu_id, role, message = check_user(request)
+        if message:
+            return JsonResponse({
+                    "status": 1,
+                    "message": message
+                    })
+        if role == "superuser":
+            self.queryset = SliceTemplate.objects.all()
+        else:
+            self.queryset = SliceTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -349,6 +385,16 @@ class ServiceMappingPluginView(ModelViewSet):
             Read information about an individual Service Mapping Plugin resource.
             The GET method reads the information of a Service Mapping Plugin.
         """
+        uu_id, role, message = check_user(request)
+        if message:
+            return JsonResponse({
+                    "status": 1,
+                    "message": message
+                    })
+        if role == "superuser":
+            self.queryset = ServiceMappingPluginModel.objects.all()
+        else:
+            self.queryset = ServiceMappingPluginModel.objects.filter(Q(user_id=uu_id)|Q(share=True))
         return super().list(self, request, args, kwargs)
 
     def create(self, request, *args, **kwargs):

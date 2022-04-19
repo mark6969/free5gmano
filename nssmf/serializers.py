@@ -19,7 +19,7 @@ class GenericTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GenericTemplate
         fields = ['templateId', 'name', 'nfvoType', 'templateType', 'templateFile', 'content',
-                  'operationStatus', 'operationTime', 'description']
+                  'operationStatus', 'operationTime', 'description', 'share', 'user_id', 'user_name']
         read_only_fields = ['templateFile']
 
     def create(self, validated_data):
@@ -87,7 +87,7 @@ class ServiceMappingPluginSerializer(serializers.ModelSerializer):
         if 'context' in kwargs.keys():
             view = kwargs['context']['view']
             if view.action == 'list':
-                self.Meta.fields = ['name', 'allocate_nssi', 'deallocate_nssi', 'pluginFile', 'nm_host', 'nfvo_host', 'subscription_host']
+                self.Meta.fields = ['name', 'allocate_nssi', 'deallocate_nssi', 'pluginFile', 'nm_host', 'nfvo_host', 'subscription_host', 'share', 'user_id', 'user_name']
             elif view.action == 'retrieve':
                 self.Meta.fields = ['name', 'allocate_nssi', 'deallocate_nssi', 'pluginFile', 'nm_host', 'nfvo_host', 'subscription_host']
             elif view.action == 'create':

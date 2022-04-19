@@ -21,6 +21,7 @@ def generate_filename_plugin(instance, filename):
 
 class ServiceMappingPluginModel(models.Model):
     user_id = models.CharField(max_length=20)
+    user_name = models.CharField(max_length=255)
     share = models.BooleanField(default=False)
     name = models.CharField(primary_key=True, max_length=20)
     allocate_nssi = models.CharField(max_length=255)
@@ -33,6 +34,7 @@ class ServiceMappingPluginModel(models.Model):
 
 class GenericTemplate(models.Model):
     user_id = models.CharField(max_length=20)
+    user_name = models.CharField(max_length=255)
     share = models.BooleanField(default=False)
     templateId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.TextField(null=True, blank=True)
@@ -57,6 +59,7 @@ class Content(models.Model):
 
 class SliceTemplate(models.Model):
     user_id = models.CharField(max_length=20)
+    user_name = models.CharField(max_length=255)
     share = models.BooleanField(default=False)
     templateId = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     description = models.TextField(null=True, blank=True)

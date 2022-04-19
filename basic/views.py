@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from .forms import RegisterForm
 from .models import User
 from django.contrib import auth as Auth
-from nssmf.models import ServiceMappingPluginModel
+from nssmf.models import ServiceMappingPluginModel, GenericTemplate, SliceTemplate
 from django.db.models import Q
 
 import json
@@ -22,8 +22,6 @@ def login(request):
     name = data.get('name')
     password = data.get('password')
     user = Auth.authenticate(username=name, password=password)
-    request.session.create()
-    Auth.login(request, user)
 
     # user_obj = User.objects.filter(username=name, password=password).first()
     if not user:
@@ -32,12 +30,15 @@ def login(request):
             "message": "無此帳號"
             })
     else:
+        Auth.login(request, user)
         request.session.create()
+        uu_id = user.id
         rep = JsonResponse({
             "status": 0,
-            "message": "登入成功"
+            "message": "登入成功",
+            "uu_id": uu_id
             })
-        rep.set_cookie('token', request.session.session_key)
+        request.session['uu_id'] = uu_id
         return rep
 
 def register(request):
@@ -67,10 +68,13 @@ def register(request):
 
     return JsonResponse({
             "status": 1,
-            "message": "error"
+            "message": "no get"
             })
 
 def get(request):
+    name = request.user
+    print(request.session['uu_id'])
+    print(name)
     rep = JsonResponse({
             "status": 0,
             "message": "登入成功"
@@ -78,21 +82,16 @@ def get(request):
     return rep
 
 def service_plygin_list(request):
-    name = request.user
-    if not name:
+    uu_id, role, message = check_user(request)
+    if message:
         return JsonResponse({
-            "status": 1,
-            "message": "請先登入"
-            })
-    user_obj = User.objects.filter(username=name).first()
-    if not user_obj:
-        return JsonResponse({
-            "status": 1,
-            "message": "查無使用者"
-            })
-    uu_id = user_obj.id
-
-    result = ServiceMappingPluginModel.objects.filter(Q(user_id=uu_id)|Q(share=True))
+                "status": 1,
+                "message": message
+                })
+    if role == "superuser":
+        result = ServiceMappingPluginModel.objects.all()
+    else:
+        result = ServiceMappingPluginModel.objects.filter(Q(user_id=uu_id)|Q(share=True))
     result_data = list()
     for a in result:
         result_data.append({
@@ -112,6 +111,64 @@ def service_plygin_list(request):
             "uu_id": uu_id
             })
 
+def generic_list(request):
+    uu_id, role, message = check_user(request)
+    if message:
+        return JsonResponse({
+                "status": 1,
+                "message": message
+                })
+    if role == "superuser":
+        result = GenericTemplate.objects.all()
+    else:
+        result = GenericTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
+    result_data = list()
+    for a in result:
+        result_data.append({
+            "owner_id": a.user_id,
+            "templateId": a.templateId,
+            "templateType": a.templateType,
+            "name": a.name,
+            "nfvoType": a.nfvoType,
+            "templateFile": a.templateFile.name,
+            "operationStatus": a.operationStatus,
+            "description": a.description,
+            "operationTime": a.operationTime,
+            "share": a.share
+        })
+    return JsonResponse({
+            "status": 0,
+            "data": result_data,
+            "uu_id": uu_id
+            })
+
+def slice_list(request):
+    uu_id, role, message = check_user(request)
+    if message:
+        return JsonResponse({
+                "status": 1,
+                "message": message
+                })
+    if role == "superuser":
+        result = SliceTemplate.objects.all()
+    else:
+        result = SliceTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
+    result_data = list()
+    for a in result:
+        result_data.append({
+            "owner_id": a.user_id,
+            "templateId": a.templateId,
+            "description": a.description,
+            # "nfvoType": a.nfvoType,
+            # "genericTemplates": a.genericTemplates,
+            # "instanceId": a.instanceId,
+            "share": a.share
+        })
+    return JsonResponse({
+            "status": 0,
+            "data": result_data,
+            "uu_id": uu_id
+            })
 
 def switch_share(request):
     data = request.body.decode("utf-8")
@@ -130,6 +187,39 @@ def switch_share(request):
                 "status": 1,
                 "message": "修改失敗"
                 })
+
+def switch_share_gen(request):
+    data = request.body.decode("utf-8")
+    data = json.loads(data)
+    name = data.get('name')
+    share = data.get('share')
+
+    try:
+        GenericTemplate.objects.filter(name=name).update(share=share)
+        return JsonResponse({
+                "status": 0,
+                "message": "修改成功"
+                })
+    except:
+        return JsonResponse({
+                "status": 1,
+                "message": "修改失敗"
+                })
+
+def check_user(request):
+    name = request.user
+    print(name)
+    uu_id, role, message = -1, "", ""
+    if name not in ["AnonymousUser", "", None]:
+        user_obj = User.objects.filter(username=name).first()
+        if user_obj:
+            uu_id = user_obj.id
+            role = user_obj.role
+        else:
+            message = "查無使用者"
+    else:
+        message = "請先登入"
+    return uu_id, role, message
 
 
 
