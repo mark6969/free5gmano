@@ -40,6 +40,7 @@ from basic.models import User
 
 def check_user(request):
     name = request.user
+    name = "安安123123" # 使用postman測試時ok，前後端跨域問題尚未解決(request內沒包含使用者登入資訊，登入時被瀏覽器擋住)
     uu_id, role, message = -1, "", ""
     if name not in ["AnonymousUser", "", None]:
         user_obj = User.objects.filter(username=name).first()
