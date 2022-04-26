@@ -90,7 +90,7 @@ ENV/
 # Rope project settings
 .ropeproject
 .idea/
-db.sqlite3
+# db.sqlite3
 *.zip
 
 # for macOS

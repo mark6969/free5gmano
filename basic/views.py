@@ -23,7 +23,6 @@ def login(request):
     password = data.get('password')
     user = Auth.authenticate(username=name, password=password)
 
-    # user_obj = User.objects.filter(username=name, password=password).first()
     if not user:
         return JsonResponse({
             "status": 1,
@@ -220,12 +219,3 @@ def check_user(request):
     else:
         message = "請先登入"
     return uu_id, role, message
-
-
-
-
-# def get_user(func):
-#     def wrapper(*args, **kwargs):
-#         print('Hello')
-#         return func(*args, **kwargs)
-#     return wrapper
