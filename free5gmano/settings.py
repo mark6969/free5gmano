@@ -68,9 +68,9 @@ INSTALLED_APPS = [
     "moi",
     'FaultManagement',
     'corsheaders',
-    'basic',
+    'SecurityManagement',
 ]
-
+AUTH_USER_MODEL = 'SecurityManagement.ManoUser'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -158,10 +158,19 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
-# 跨網域
-CORS_ORIGIN_ALLOW_ALL = True # 為true不須CORS_ALLOW_WHITELIST
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_WHITELIST = ()
+# # 跨網域
+# CORS_ORIGIN_ALLOW_ALL = True # 為true不須CORS_ALLOW_WHITELIST
+# CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_WHITELIST = ()
 
 # 修改auth默認model
 # AUTH_USER_MODEL = 'basic.User'
+
+# "detail": "CSRF Failed: CSRF cookie not set."
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication'
+        # 'rest_framework.authentication.BasicAuthentication'
+        # 'rest_framework.authentication.TokenAuthentication'
+    )
+}

@@ -36,22 +36,33 @@ from nssmf.serializers import SliceTemplateSerializer, SliceTemplateRelationSeri
 from nssmf.models import SliceTemplate, GenericTemplate, ServiceMappingPluginModel, Content
 from nssmf.enums import OperationStatus, PluginOperationStatus
 from free5gmano import settings
-from basic.models import User
+from SecurityManagement.models import ManoUser
+
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    # 跳過SessionAuthentication需要檢查csrf的步驟 
+    def enforce_csrf(self, request):
+        return
 
 def check_user(request):
     name = request.user
     # name = "安安123123" # 使用postman測試時ok，前後端跨域問題尚未解決(request內沒包含使用者登入資訊，登入時被瀏覽器擋住)
     uu_id, role, message = -1, "", ""
     if name not in ["AnonymousUser", "", None]:
-        user_obj = User.objects.filter(username=name).first()
+        user_obj = ManoUser.objects.filter(username=name).first()
         if user_obj:
             uu_id = user_obj.id
             role = user_obj.role
+            if role not in ["tenant", "admin"]:
+                message = "該帳號未被授權"
         else:
             message = "查無使用者"
     else:
         message = "請先登入"
     return uu_id, role, message
+
 
 class CustomAuthToken(ObtainAuthToken):
 
@@ -87,6 +98,7 @@ class GenericTemplateView(MultipleSerializerViewSet):
     """
     queryset = GenericTemplate.objects.all()
     serializer_class = MultipleSerializerViewSet.get_serializer_class
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     @staticmethod
     def check(request, content, filename):
@@ -110,7 +122,7 @@ class GenericTemplateView(MultipleSerializerViewSet):
                     "status": 1,
                     "message": message
                     })
-        if role == "superuser":
+        if role == "admin":
             self.queryset = GenericTemplate.objects.all()
         else:
             self.queryset = GenericTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
@@ -122,6 +134,14 @@ class GenericTemplateView(MultipleSerializerViewSet):
             Create a new individual Generic Template resource.
             The POST method creates a new individual Generic Template resource.
         """
+        uu_id, role, message = check_user(request)
+        name = str(request.user)
+        data = json.loads(request.body.decode("utf-8"))
+        data.update({
+            "user_id": uu_id,
+            "user_name": name
+            })
+        request.body = str(json.dumps(data)).encode("utf-8")
         return super().create(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
@@ -242,6 +262,7 @@ class SliceTemplateView(MultipleSerializerViewSet):
     """
     queryset = SliceTemplate.objects.all()
     serializer_class = MultipleSerializerViewSet.get_serializer_class
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     def list(self, request, *args, **kwargs):
         """
@@ -254,7 +275,7 @@ class SliceTemplateView(MultipleSerializerViewSet):
                     "status": 1,
                     "message": message
                     })
-        if role == "superuser":
+        if role == "admin":
             self.queryset = SliceTemplate.objects.all()
         else:
             self.queryset = SliceTemplate.objects.filter(Q(user_id=uu_id)|Q(share=True))
@@ -265,6 +286,14 @@ class SliceTemplateView(MultipleSerializerViewSet):
             Create a new individual Slice Template resource.
             The POST method creates a new individual Slice Template resource.
         """
+        uu_id, role, message = check_user(request)
+        name = str(request.user)
+        data = json.loads(request.body.decode("utf-8"))
+        data.update({
+            "user_id": uu_id,
+            "user_name": name
+            })
+        request.body = str(json.dumps(data)).encode("utf-8")
         return super().create(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
@@ -379,6 +408,7 @@ class ServiceMappingPluginView(ModelViewSet):
     """
     queryset = ServiceMappingPluginModel.objects.all()
     serializer_class = ServiceMappingPluginSerializer
+    authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
     response_data = dict()
 
     def list(self, request, *args, **kwargs):
@@ -392,13 +422,14 @@ class ServiceMappingPluginView(ModelViewSet):
                     "status": 1,
                     "message": message
                     })
-        if role == "superuser":
+        if role == "admin":
             self.queryset = ServiceMappingPluginModel.objects.all()
         else:
             self.queryset = ServiceMappingPluginModel.objects.filter(Q(user_id=uu_id)|Q(share=True))
         return super().list(self, request, args, kwargs)
 
     def create(self, request, *args, **kwargs):
+        print("in_view_create")
         """
             Create a new individual Service Mapping Plugin resource.
             The POST method creates a new individual Service Mapping Plugin resource.
