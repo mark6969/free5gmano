@@ -88,10 +88,6 @@ class ServiceMappingPluginSerializer(serializers.ModelSerializer):
         if 'context' in kwargs.keys():
             view = kwargs['context']['view']
             self.request = kwargs['context']['request']
-            print("s1_have_re")
-            print(view.action)
-            print(self.request.session['uu_id'])
-            # print(kwargs)
             if view.action == 'list':
                 self.Meta.fields = ['name', 'allocate_nssi', 'deallocate_nssi', 'pluginFile', 'nm_host', 'nfvo_host', 'subscription_host', 'share', 'user_id', 'user_name']
             elif view.action == 'retrieve':

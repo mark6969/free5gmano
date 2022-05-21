@@ -136,12 +136,12 @@ class GenericTemplateView(MultipleSerializerViewSet):
         """
         uu_id, role, message = check_user(request)
         name = str(request.user)
-        data = json.loads(request.body.decode("utf-8"))
-        data.update({
+        request.POST._mutable = True
+        request.POST.update({
             "user_id": uu_id,
             "user_name": name
             })
-        request.body = str(json.dumps(data)).encode("utf-8")
+        request.POST._mutable = False
         return super().create(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
@@ -288,12 +288,12 @@ class SliceTemplateView(MultipleSerializerViewSet):
         """
         uu_id, role, message = check_user(request)
         name = str(request.user)
-        data = json.loads(request.body.decode("utf-8"))
-        data.update({
+        request.POST._mutable = True
+        request.POST.update({
             "user_id": uu_id,
             "user_name": name
             })
-        request.body = str(json.dumps(data)).encode("utf-8")
+        request.POST._mutable = False
         return super().create(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
